@@ -3,7 +3,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\MenuResource;
 use App\Models\MenuItem;
+use Exception;
 use Illuminate\Routing\Controller as BaseController;
 
 class MenuController extends BaseController
@@ -92,7 +94,42 @@ class MenuController extends BaseController
     ]
      */
 
-    public function getMenuItems() {
-        throw new \Exception('implement in coding task 3');
+   
+
+    public function getMenuItems()
+    {
+        $menu_items = MenuItem::all()->groupBy('parent_id');
+        return response()->json($this->myCollection($menu_items[null], $menu_items));
+    }
+
+
+    public function myCollection($value, $menu_items_grouped)
+    {
+        $menu = [];
+        foreach ($value as $key => $val) {
+            array_push($menu, $this->mySingleCollection($val, $menu_items_grouped));
+        }
+        return $menu;
+    }
+
+
+    public function mySingleCollection($value, $menu_items_grouped)
+    {
+        try {
+            $children = $this->myCollection($menu_items_grouped[$value->id], $menu_items_grouped);
+        } catch (Exception $e) {
+            $children = [];
+        }
+
+
+        return [
+            "id" => $value->id,
+            "name" => $value->name,
+            "url" => $value->url,
+            "parent_id" => $value->parent_id,
+            "created_at" => $value->created_at,
+            "updated_at" => $value->updated_at,
+            "children" =>  $children
+        ];
     }
 }
